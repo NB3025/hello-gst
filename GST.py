@@ -2,6 +2,8 @@ import requests
 import json
 import time
 import pymysql.cursors
+import os
+
 
 
 class GST:
@@ -16,8 +18,10 @@ class GST:
     def getHolders(self):
         response = requests.get(self._holders_url)
         obj = response.text
-        
-        with open('./db_info.json','r') as f:
+
+        target_file = os.path.join(os.getcwd(),'db_info.json')
+
+        with open(target_file,'r') as f:
             db_obj = json.load(f)
 
         connection = pymysql.connect(host=db_obj['host'],
@@ -46,7 +50,9 @@ class GST:
                 amount = round(obj_data['tokenAmount']['uiAmount'],0)
                 amount_dict[tokenSymbol] = amount
         
-        with open('./db_info.json','r') as f:
+        target_file = os.path.join(os.getcwd(),'db_info.json')
+        
+        with open(target_file,'r') as f:
             db_obj = json.load(f)
 
         connection = pymysql.connect(host=db_obj['host'],
