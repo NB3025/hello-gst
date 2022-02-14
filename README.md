@@ -45,12 +45,7 @@ MariaDB [(none)]> show grants for 'STEPN'@'localhost';
 MariaDB [(none)]> flush privileges;
 
 테이블 생성은 root 계정으로 진행
-CREATE TABLE t_GST_Holders(
-    id INT NOT NULL AUTO_INCREMENT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data json,
-    PRIMARY KEY(id)
-);
+
 
 1. GST 홀더 테이블
 

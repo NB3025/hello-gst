@@ -17,7 +17,7 @@ class GST:
         response = requests.get(self._holders_url)
         obj = response.text
         
-        with open('db_info.json','r') as f:
+        with open('./db_info.json','r') as f:
             db_obj = json.load(f)
 
         connection = pymysql.connect(host=db_obj['host'],
@@ -46,7 +46,7 @@ class GST:
                 amount = round(obj_data['tokenAmount']['uiAmount'],0)
                 amount_dict[tokenSymbol] = amount
         
-        with open('db_info.json','r') as f:
+        with open('./db_info.json','r') as f:
             db_obj = json.load(f)
 
         connection = pymysql.connect(host=db_obj['host'],
