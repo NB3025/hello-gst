@@ -15,20 +15,20 @@ https://api.solscan.io/account/tokens?address=CwwMfXPXfRT5H5JUatpBctASRGhKW2SqLW
 -> 위 데이터들을 DB에 저장한다.
 
 DB 테이블
+MariaDB [(none)]> use mysql
+
+MariaDB [mysql]> update user SET password=password('') where user='root';
+Query OK, 1 row affected (0.001 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+MariaDB [mysql]> flush privileges;
+Query OK, 0 rows affected (0.000 sec)
 
 MariaDB [(none)]> create database GST;
 Query OK, 1 row affected (0.001 sec)
 
 MariaDB [(none)]> create user 'STEPN'@'localhost' identified by '';
 Query OK, 0 rows affected (0.000 sec)
-
-테이블 생성은 root 계정으로 진행
-CREATE TABLE t_GST_Holders(
-    id INT NOT NULL AUTO_INCREMENT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data json,
-    PRIMARY KEY(id)
-);
 
 MariaDB [(none)]> grant select,insert,delete,update on GST.* to 'STEPN'@'localhost';
 Query OK, 0 rows affected (0.000 sec)
@@ -44,17 +44,23 @@ MariaDB [(none)]> show grants for 'STEPN'@'localhost';
 
 MariaDB [(none)]> flush privileges;
 
-
+테이블 생성은 root 계정으로 진행
+CREATE TABLE t_GST_Holders(
+    id INT NOT NULL AUTO_INCREMENT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data json,
+    PRIMARY KEY(id)
+);
 
 1. GST 홀더 테이블
 
-t_GST_Holders
+t_gst_holders
 ---------------------
 index   |created_at         |data
 1       |2022-02-14 15:34   | data
 
 - 스키마
-CREATE TABLE t_GST_Holders(
+CREATE TABLE t_gst_holders(
     id INT NOT NULL AUTO_INCREMENT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data json,

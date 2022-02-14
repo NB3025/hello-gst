@@ -5,18 +5,40 @@ import sqlite3
 import requests
 import json
 import time
+import pymysql.cursors
 
 
 class GST:
     def __init__(self):
-        self._url = 'https://api.solscan.io/account/tokens?address=CwwMfXPXfRT5H5JUatpBctASRGhKW2SqLWWGU3eX5Zgo&price=1'
-
-    @property
-    def getURL(self):
-        return self._url
+        self._amount_url = 'https://api.solscan.io/account/tokens?address=CwwMfXPXfRT5H5JUatpBctASRGhKW2SqLWWGU3eX5Zgo&price=1'
+        self._holders_url = 'https://api.solscan.io/token/holders?token=AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB&offset=0&size=20'
+        
+    # @property
+    # def getURL(self):
+    #     return self._url
     
+    def getHolders(self):
+        response = requests.get(self._holders_url)
+        obj = response.text
+        
+        with open('db_info.json','r') as f:
+            db_obj = json.load(f)
+
+        connection = pymysql.connect(host=db_obj['host'],
+                                    user=db_obj['user'],
+                                    password=db_obj['password'],
+                                    database=db_obj['database'],
+                                    cursorclass=pymysql.cursors.DictCursor)
+        
+        with connection:
+            with connection.cursor() as cursor:
+                sql = f"Insert INTO t_gst_holders (data) VALUES (%s);"
+                cursor.execute(sql,(obj))
+    
+            connection.commit()
+            
     def getAmount(self):
-        response = requests.get(gst.getURL)
+        response = requests.get(self._amount_url)
         obj = json.loads(response.text)
 
         target_sysmbol = ['USDC', 'GST']
@@ -28,18 +50,27 @@ class GST:
                 amount = round(obj_data['tokenAmount']['uiAmount'],0)
                 amount_dict[tokenSymbol] = amount
         
-        return amount_dict
-    
-    def run_sql(self, amount_dict):
-    
-        conn = sqlite3.connect('token.db3')
-        cur = conn.cursor()
+        with open('db_info.json','r') as f:
+            db_obj = json.load(f)
 
-        _sql = f"Insert INTO amount(USDC_amount, GST_amount) VALUES({amount_dict['USDC']},{amount_dict['GST']})"
-        cur.execute(_sql)
+        connection = pymysql.connect(host=db_obj['host'],
+                                    user=db_obj['user'],
+                                    password=db_obj['password'],
+                                    database=db_obj['database'],
+                                    cursorclass=pymysql.cursors.DictCursor)
 
-        conn.commit()
-                    
+        with connection:
+            with connection.cursor() as cursor:
+                sql = f"Insert INTO t_token_amount(usdc_amount, gst_amount) VALUES({amount_dict['USDC']},{amount_dict['GST']})"
+                cursor.execute(sql)
+    
+            connection.commit()
+    
+            # with connection.cursor() as cursor:
+            #     sql = "SELECT * FROM t_token_amount"
+            #     cursor.execute(sql)
+            #     result = cursor.fetchone()
+            #     print (result)                    
         
     def savejson(self):
         response = requests.get(gst.getURL)        
@@ -52,12 +83,7 @@ class GST:
         
         print (fname)
 
-while 1:
-
-    gst = GST()
-    amount_dict = gst.getAmount()
-    gst.run_sql(amount_dict)
-    
-    time.sleep(300)
-
+gst = GST()
+gst.getAmount()
+gst.getHolders()
 
