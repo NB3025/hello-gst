@@ -3,7 +3,7 @@ import json
 import time
 import pymysql.cursors
 import os
-
+import pandas as pd
 
 
 class GST:
@@ -15,7 +15,7 @@ class GST:
     # def getURL(self):
     #     return self._url
     
-    def getHolders(self):
+    def setHolders(self):
         response = requests.get(self._holders_url)
         obj = response.text
 
@@ -37,7 +37,7 @@ class GST:
     
             connection.commit()
             
-    def getAmount(self):
+    def setAmount(self):
         response = requests.get(self._amount_url)
         obj = json.loads(response.text)
 
@@ -50,6 +50,7 @@ class GST:
                 amount = round(obj_data['tokenAmount']['uiAmount'],0)
                 amount_dict[tokenSymbol] = amount
         
+        # TODO 서버에서 경로와 윈도우 경로가 다름 수정이 필요함
         target_file = os.path.join(os.getcwd(),'db_info.json')
         
         with open(target_file,'r') as f:
@@ -73,7 +74,31 @@ class GST:
             #     cursor.execute(sql)
             #     result = cursor.fetchone()
             #     print (result)                    
+    
+    def getAmount(self):
+        target_file = os.path.join(os.getcwd(),'db_info.json')
         
+        with open(target_file,'r') as f:
+            db_obj = json.load(f)
+
+        connection = pymysql.connect(host=db_obj['host'],
+                                    user=db_obj['user'],
+                                    password=db_obj['password'],
+                                    database=db_obj['database'],
+                                    cursorclass=pymysql.cursors.DictCursor)
+
+        df = pd.DataFrame()
+        with connection:
+            with connection.cursor() as cursor:
+                sql = "SELECT * FROM t_token_amount"
+                cursor.execute(sql)
+                result = cursor.fetchall()
+                for r in result:
+                    df_ = pd.DataFrame([r])
+                    df = pd.concat([df,df_])
+                
+        df.to_csv('getamount.csv')
+    
     def savejson(self):
         response = requests.get(gst.getURL)        
         l_time = time.localtime(time.time())
@@ -87,5 +112,6 @@ class GST:
 
 gst = GST()
 gst.getAmount()
-gst.getHolders()
+# gst.getHolders()
+gst.getAmount()
 
