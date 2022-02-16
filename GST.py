@@ -90,9 +90,20 @@ class GST:
 
     def notify_price(self,cur_price):
         pre_price = self.get_price()
+        
         max_price = max(pre_price)
+        min_price = min(pre_price)
+        
+        status = "상승 중"
+        diff = 0
+        if cur_price > max_price:
+            diff = abs(cur_price-max_price)
+        elif cur_price < min_price:
+            diff = abs(cur_price-min_price)
+            status = "하락 중"
 
-        diff = (cur_price/max_price)-1
+        if diff < (cur_price*0.02):
+            return
 
         l_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -101,21 +112,22 @@ class GST:
         chat_list = telegram_obj['chat_list']
         key = telegram_obj['KEY']
 
-        print (f'[notify_price] {pre_price=} / {max_price=} / {cur_price=}')
+        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=}')
 
-        if abs(diff) > 0.03:
-            notify_msg = f"{l_time} 가격 알림 \n 현재 가격 : {round(cur_price,3)} \n 이전 1시간 최고 가격 : {round(max_price,3)} "
-            for chat in chat_list:
-                tel_url = f"https://api.telegram.org/bot{key}/sendmessage?chat_id={chat}&text={notify_msg}"
-                res = requests.get(tel_url)
-            print (f'[notify_price] {notify_msg=}')
+        notify_msg = f"{l_time} 가격 알림 ***{status}***\n 현재 가격 : {round(cur_price,3)} \n 이전 1시간 최고 가격 : {round(max_price,3)} \n 이전 1시간 최저 가격 : {round(min_price,3)}"
+        for chat in chat_list:
+            tel_url = f"https://api.telegram.org/bot{key}/sendmessage?chat_id={chat}&text={notify_msg}"
+            res = requests.get(tel_url)
+
+        print (f'[notify_price] {notify_msg=}')
 
     def get_price(self):
         price_arr = []
 
-        sql = "SELECT * FROM t_gst_price limit 12"
+        sql = "SELECT * FROM t_gst_price limit 12" # 1시간
         result = self._db_manager.executeAll(sql)
-        for r in result:
+        
+        for r in result[:len(result)-1]:
             price_arr.append(r['price'])
         
         return price_arr
