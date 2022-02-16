@@ -75,3 +75,18 @@ CREATE TABLE t_token_amount(\
     usdc_amount INT,\
     PRIMARY KEY(id)\
 );
+
+
+t_gst_price
+-----------------------
+index   |time               |price     | exchange
+1       |2022-02-14 15:34   | 30            | 40
+
+
+CREATE TABLE t_gst_price(\
+    id INT NOT NULL AUTO_INCREMENT,\
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,\
+    price FLOAT,\
+    exchange VARCHAR(100),\
+    PRIMARY KEY(id)\
+);
