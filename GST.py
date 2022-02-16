@@ -1,43 +1,30 @@
 import requests
 import json
 import time
-import pymysql.cursors
 import os
 import pandas as pd
 from datetime import datetime
+from Database import Database
 
+HERE = os.path.abspath(os.path.dirname(__file__))
+TELEGRAM_CON = os.path.join(HERE, 'gst_config/telegram.json')
+        # self._db_info_file = os.path.join(HERE,'db_info.json')
 
 class GST:
     def __init__(self):
         self._amount_url = 'https://api.solscan.io/account/tokens?address=CwwMfXPXfRT5H5JUatpBctASRGhKW2SqLWWGU3eX5Zgo&price=1'
         self._holders_url = 'https://api.solscan.io/token/holders?token=AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB&offset=0&size=20'
         self._price_url = 'https://api.solscan.io/amm/market?address=AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB&sort_by=liquidity&sort_type=desc'
-    # @property
-    # def getURL(self):
-    #     return self._url
-    
+        self._db_manager = Database()
+        
     def setHolders(self):
         response = requests.get(self._holders_url)
         obj = response.text
 
-        target_file = os.path.join(os.getcwd(),'db_info.json')
+        sql = f"Insert INTO t_gst_holders (data) VALUES (%s);"
+        self._db_manager.execute(sql,obj)
+        self._db_manager.commit()
 
-        with open(target_file,'r') as f:
-            db_obj = json.load(f)
-
-        connection = pymysql.connect(host=db_obj['host'],
-                                    user=db_obj['user'],
-                                    password=db_obj['password'],
-                                    database=db_obj['database'],
-                                    cursorclass=pymysql.cursors.DictCursor)
-        
-        with connection:
-            with connection.cursor() as cursor:
-                sql = f"Insert INTO t_gst_holders (data) VALUES (%s);"
-                cursor.execute(sql,(obj))
-    
-            connection.commit()
-            
     def setAmount(self):
         response = requests.get(self._amount_url)
         obj = json.loads(response.text)
@@ -51,46 +38,14 @@ class GST:
                 amount = round(obj_data['tokenAmount']['uiAmount'],0)
                 amount_dict[tokenSymbol] = amount
         
-        # TODO 서버에서 경로와 윈도우 경로가 다름 수정이 필요함
-        target_file = os.path.join(os.getcwd(),'db_info.json')
-        
-        with open(target_file,'r') as f:
-            db_obj = json.load(f)
-
-        connection = pymysql.connect(host=db_obj['host'],
-                                    user=db_obj['user'],
-                                    password=db_obj['password'],
-                                    database=db_obj['database'],
-                                    cursorclass=pymysql.cursors.DictCursor)
-
-        with connection:
-            with connection.cursor() as cursor:
-                sql = f"Insert INTO t_token_amount(usdc_amount, gst_amount) VALUES({amount_dict['USDC']},{amount_dict['GST']})"
-                cursor.execute(sql)
-    
-            connection.commit()
-    
-            # with connection.cursor() as cursor:
-            #     sql = "SELECT * FROM t_token_amount"
-            #     cursor.execute(sql)
-            #     result = cursor.fetchone()
-            #     print (result)                    
+        sql = f"Insert INTO t_token_amount(usdc_amount, gst_amount) VALUES({amount_dict['USDC']},{amount_dict['GST']})"
+        self._db_manager.execute(sql)
+        self._db_manager.commit()
     
     def getAmount(self):
-        target_file = os.path.join(os.getcwd(),'db_info.json')
-        
-        with open(target_file,'r') as f:
-            db_obj = json.load(f)
-
-        connection = pymysql.connect(host=db_obj['host'],
-                                    user=db_obj['user'],
-                                    password=db_obj['password'],
-                                    database=db_obj['database'],
-                                    cursorclass=pymysql.cursors.DictCursor)
-
         df = pd.DataFrame()
-        with connection:
-            with connection.cursor() as cursor:
+        with self._db_manager:
+            with self._db_manager.cursor() as cursor:
                 sql = "SELECT * FROM t_token_amount"
                 cursor.execute(sql)
                 result = cursor.fetchall()
@@ -126,26 +81,11 @@ class GST:
                 max_volume = _vol
                 exchange = _exc
                 price = _pri
-            
-        # TODO 서버에서 경로와 윈도우 경로가 다름 수정이 필요함
-        target_file = os.path.join(os.getcwd(),'db_info.json')
+      
+        sql = f"Insert INTO t_gst_price(price, exchange) VALUES({price},'{exchange}')"
+        self._db_manager.execute(sql)
+        self._db_manager.commit()
         
-        with open(target_file,'r') as f:
-            db_obj = json.load(f)
-
-        connection = pymysql.connect(host=db_obj['host'],
-                                    user=db_obj['user'],
-                                    password=db_obj['password'],
-                                    database=db_obj['database'],
-                                    cursorclass=pymysql.cursors.DictCursor)
-
-        with connection:
-            with connection.cursor() as cursor:
-                sql = f"Insert INTO t_gst_price(price, exchange) VALUES({price},'{exchange}')"
-                cursor.execute(sql)
-    
-            connection.commit()
-
         self.notify_price(price)
 
     def notify_price(self,cur_price):
@@ -155,12 +95,14 @@ class GST:
         diff = (cur_price/max_price)-1
 
         l_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        telegram_file = os.path.join(os.getcwd(),'telegram.json')
-        with open(telegram_file,'r') as f:
+
+        with open(TELEGRAM_CON,'r') as f:
             telegram_obj = json.load(f)
         chat_list = telegram_obj['chat_list']
         key = telegram_obj['KEY']
+
         print (f'[notify_price] {pre_price=} / {max_price=} / {cur_price=}')
+
         if abs(diff) > 0.03:
             notify_msg = f"{l_time} 가격 알림 \n 현재 가격 : {round(cur_price,3)} \n 이전 1시간 최고 가격 : {round(max_price,3)} "
             for chat in chat_list:
@@ -169,34 +111,18 @@ class GST:
             print (f'[notify_price] {notify_msg=}')
 
     def get_price(self):
-        target_file = os.path.join(os.getcwd(),'db_info.json')
-        
-        with open(target_file,'r') as f:
-            db_obj = json.load(f)
-
-        connection = pymysql.connect(host=db_obj['host'],
-                                    user=db_obj['user'],
-                                    password=db_obj['password'],
-                                    database=db_obj['database'],
-                                    cursorclass=pymysql.cursors.DictCursor)
-
         price_arr = []
 
-        with connection:
-            with connection.cursor() as cursor:
-                sql = "SELECT * FROM t_gst_price limit 12"
-                cursor.execute(sql)
-                result = cursor.fetchall()
-                for r in result:
-                    price_arr.append(r['price'])
+        sql = "SELECT * FROM t_gst_price limit 12"
+        result = self._db_manager.executeAll(sql)
+        print (result)
+        for r in result:
+            price_arr.append(r['price'])
         
         return price_arr
 
 
 gst = GST()
-while 1:
-    gst.setAmount()
-    gst.setHolders()
-    gst.set_price()
-
-    time.sleep(30)
+gst.setAmount()
+gst.setHolders()
+gst.set_price()
