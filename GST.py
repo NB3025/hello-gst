@@ -17,7 +17,7 @@ class GST:
         self._price_url = 'https://api.solscan.io/amm/market?address=AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB&sort_by=liquidity&sort_type=desc'
         self._db_manager = Database()
         
-    def setHolders(self):
+    def set_holders(self):
         response = requests.get(self._holders_url)
         obj = response.text
 
@@ -25,7 +25,7 @@ class GST:
         self._db_manager.execute(sql,obj)
         self._db_manager.commit()
 
-    def setAmount(self):
+    def set_amount(self):
         response = requests.get(self._amount_url)
         obj = json.loads(response.text)
 
@@ -42,7 +42,7 @@ class GST:
         self._db_manager.execute(sql)
         self._db_manager.commit()
     
-    def getAmount(self):
+    def get_amount(self):
         df = pd.DataFrame()
         with self._db_manager:
             with self._db_manager.cursor() as cursor:
@@ -55,7 +55,7 @@ class GST:
                 
         df.to_csv('getamount.csv')
     
-    def savejson(self):
+    def save_json(self):
         response = requests.get(gst.getURL)        
         l_time = time.localtime(time.time())
         fname = f"{time.strftime('%Y%m%d%I%M%S',l_time)}.json"
