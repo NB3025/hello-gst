@@ -167,3 +167,6 @@ cython_debug/
 # End of https://www.toptal.com/developers/gitignore/api/django
 
 db_info.json
+kakao_test.py
+getamount.csv
+telegram.json
