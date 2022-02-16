@@ -115,7 +115,6 @@ class GST:
 
         sql = "SELECT * FROM t_gst_price limit 12"
         result = self._db_manager.executeAll(sql)
-        print (result)
         for r in result:
             price_arr.append(r['price'])
         
@@ -123,6 +122,6 @@ class GST:
 
 
 gst = GST()
-gst.setAmount()
-gst.setHolders()
+gst.set_amount()
+gst.set_holders()
 gst.set_price()
