@@ -89,21 +89,20 @@ class GST:
         self.notify_price(price)
 
     def notify_price(self,cur_price):
-        pre_price = self.get_price()
+        price_list = self.get_price()
         
-        max_price = max(pre_price)
-        min_price = min(pre_price)
-        
-        status = "상승 중"
-        diff = 0
-        if cur_price > max_price:
-            diff = abs(cur_price-max_price)
-        elif cur_price < min_price:
-            diff = abs(cur_price-min_price)
-            status = "하락 중"
+        min_price = price_list['min']
+        max_price = price_list['max']
+        avg_price = price_list['avg']
 
-        if diff < (cur_price*0.02):
-            return
+        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=}')
+
+        if cur_price > avg_price and cur_price > max_price*1.02:
+            status = "상승 중"
+        elif cur_price < avg_price and cur_price < min_price*0.98:
+            status = "하락 중"
+        else:
+            return 
 
         l_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -122,15 +121,21 @@ class GST:
         print (f'[notify_price] {notify_msg=}')
 
     def get_price(self):
-        price_arr = []
-
-        sql = "SELECT * FROM t_gst_price limit 12" # 1시간
+        sql = "select price from t_gst_price order by created_at desc limit 12" # 1시간
         result = self._db_manager.executeAll(sql)
+        result = result[:len(result)-1]
+
+        price_list = []
+        for r in result:
+            price_list.append(r['price'])
         
-        for r in result[:len(result)-1]:
-            price_arr.append(r['price'])
+        price_dict = {
+            'min': min(price_list),
+            'max': max(price_list),
+            'avg':(sum(price_list)/len(price_list))
+            }
         
-        return price_arr
+        return price_dict
 
 
 gst = GST()
