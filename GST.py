@@ -111,7 +111,7 @@ class GST:
         chat_list = telegram_obj['chat_list']
         key = telegram_obj['KEY']
 
-        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=}')
+        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=} / {avg_price=}')
 
         notify_msg = f"{l_time} 가격 알림 ***{status}***\n 현재 가격 : {round(cur_price,3)} \n 이전 1시간 최고 가격 : {round(max_price,3)} \n 이전 1시간 최저 가격 : {round(min_price,3)}"
         for chat in chat_list:
