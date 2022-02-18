@@ -123,11 +123,11 @@ class GST:
         max_price = price_list['max']
         avg_price = price_list['avg']
 
-        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=}')
+        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=} / {avg_price=}')
 
-        if cur_price > avg_price*1.02:
+        if cur_price > avg_price*1.005:
             status = "상승 중"
-        elif cur_price < avg_price*0.98:
+        elif cur_price < avg_price*0.995:
             status = "하락 중"
         else:
             return 
