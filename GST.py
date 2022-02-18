@@ -41,6 +41,33 @@ class GST:
         sql = f"Insert INTO t_token_amount(usdc_amount, gst_amount) VALUES({amount_dict['USDC']},{amount_dict['GST']})"
         self._db_manager.execute(sql)
         self._db_manager.commit()
+        
+        self.notify_amount()
+    
+    def notify_amount(self):
+        sql = "select * from t_token_amount order by created_at desc limit 12" # 1시간
+        result = self._db_manager.executeAll(sql)
+
+        cur_gst_amount = result[0]['gst_amount']
+        pre_gst_amount = result[-1]['gst_amount']
+        
+        if (cur_gst_amount - pre_gst_amount) < 50000:
+            return
+
+        l_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        with open(TELEGRAM_CON,'r') as f:
+            telegram_obj = json.load(f)
+        chat_list = telegram_obj['chat_list']
+        key = telegram_obj['KEY']
+
+        notify_msg = f"{l_time} GST 갯수 5만개 이상 변동 알림 \n 현재 GST수량 : {cur_gst_amount} \n 이전 GST수량 : {pre_gst_amount}"
+        for chat in chat_list:
+            tel_url = f"https://api.telegram.org/bot{key}/sendmessage?chat_id={chat}&text={notify_msg}"
+            res = requests.get(tel_url)
+
+        print (f'[notify_price] {notify_msg=}')
+        
     
     def get_amount(self):
         df = pd.DataFrame()
@@ -90,6 +117,7 @@ class GST:
 
     def notify_price(self,cur_price):
         price_list = self.get_price()
+        # TODO 처음  DB를 쌓는경우 price_list에 데이터가 없음. 처리해주야함
         
         min_price = price_list['min']
         max_price = price_list['max']
