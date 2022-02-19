@@ -123,8 +123,6 @@ class GST:
         max_price = price_list['max']
         avg_price = price_list['avg']
 
-        print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=} / {avg_price=}')
-
         if cur_price > avg_price*1.005:
             status = "상승 중"
         elif cur_price < avg_price*0.995:
@@ -142,9 +140,16 @@ class GST:
         print (f'[notify_price] {max_price=} / {min_price=} /{cur_price=} / {avg_price=}')
 
         notify_msg = f"{l_time} 가격 알림 ***{status}***\n 현재 가격 : {round(cur_price,3)} \n 이전 1시간 최고 가격 : {round(max_price,3)} \n 이전 1시간 최저 가격 : {round(min_price,3)}"
-        for chat in chat_list:
-            tel_url = f"https://api.telegram.org/bot{key}/sendmessage?chat_id={chat}&text={notify_msg}"
-            res = requests.get(tel_url)
+        
+        count = 1
+        if cur_price > 3.5:
+            count = 10
+        
+        for _ in range(count):
+            for chat in chat_list:
+                tel_url = f"https://api.telegram.org/bot{key}/sendmessage?chat_id={chat}&text={notify_msg}"
+                res = requests.get(tel_url)
+            time.sleep(1)
 
         print (f'[notify_price] {notify_msg=}')
 
